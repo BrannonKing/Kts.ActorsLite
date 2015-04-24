@@ -16,7 +16,5 @@ namespace Kts.Actors
 	{
 		new Task<R> Push(T value);
 		new Task<R[]> Push(IEnumerable<T> values);
-		Task Push(T value, IActor<R> next);
-		Task<R2> Push<R2>(T value, IActor<R, R2> next);
 	}
 }

@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Kts.Actors
 {
-	public class SynchronousActor<T> : IActor<T>
+	public class OrderedSyncActor<T> : IActor<T>
 	{
 		private readonly Action<T> _action;
-		public SynchronousActor(Action<T> action)
+		public OrderedSyncActor(Action<T> action)
 		{
 			_action = action;
 		}
@@ -28,10 +28,10 @@ namespace Kts.Actors
 		}
 	}
 
-	public class SynchronousActor<T, R> : SynchronousActor<T>, IActor<T, R>
+	public class OrderedSyncActor<T, R> : OrderedSyncActor<T>, IActor<T, R>
 	{
 		private readonly Func<T, R> _action;
-		public SynchronousActor(Func<T, R> action)
+		public OrderedSyncActor(Func<T, R> action)
 			: base(t => action.Invoke(t))
 		{
 			_action = action;
@@ -48,19 +48,6 @@ namespace Kts.Actors
 			foreach (var value in values)
 				rs.Add(_action.Invoke(value));
 			return Task.FromResult(rs.ToArray());
-		}
-
-		public Task Push(T value, IActor<R> next)
-		{
-			var result = _action.Invoke(value);
-			if (next != null)
-				return next.Push(result);
-			return Task.FromResult(result);
-		}
-		
-		public Task<R2> Push<R2>(T value, IActor<R, R2> next)
-		{
-			return next.Push(_action.Invoke(value));
 		}
 	}
 }

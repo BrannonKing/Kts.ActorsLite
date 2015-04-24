@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Kts.Actors
 {
-	public class UnorderedActor<T> : IActor<T>
+	public class UnorderedAsyncActor<T> : IActor<T>
 	{
 		private readonly Action<T> _action;
-		public UnorderedActor(Action<T> action)
+		public UnorderedAsyncActor(Action<T> action)
 		{
 			_action = action;
 		}
@@ -25,10 +25,10 @@ namespace Kts.Actors
 		}
 	}
 
-	public class UnorderedActor<T, R> : UnorderedActor<T>, IActor<T, R>
+	public class UnorderedAsyncActor<T, R> : UnorderedAsyncActor<T>, IActor<T, R>
 	{
 		private readonly Func<T, R> _action;
-		public UnorderedActor(Func<T, R> action)
+		public UnorderedAsyncActor(Func<T, R> action)
 			: base(t => action.Invoke(t))
 		{
 			_action = action;
@@ -42,19 +42,6 @@ namespace Kts.Actors
 		new public async Task<R[]> Push(IEnumerable<T> values)
 		{
 			return await Task.WhenAll(values.Select(v => Push(v)));
-		}
-
-		public async Task Push(T value, IActor<R> next)
-		{
-			var result = await Push(value);
-			if (next != null)
-				await next.Push(result);
-		}
-		
-		public async Task<R2> Push<R2>(T value, IActor<R, R2> next)
-		{
-			var result = await Push(value);
-			return await next.Push(result);
 		}
 	}
 }
