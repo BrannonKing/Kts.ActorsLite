@@ -7,73 +7,23 @@ using System.Threading.Tasks;
 
 namespace Kts.Actors
 {
-	public class OrderedSyncActor<T> : IActor<T>
+	/// <summary>
+	/// Executes the method immediately (on the caller thread) upon any call.
+	/// </summary>
+	public class OrderedSyncActor<T> : OrderedSyncActor<T, bool>
 	{
-		private readonly Action<T, CancellationToken> _action;
 		public OrderedSyncActor(Action<T> action)
 			: this((t, c) => action.Invoke(t))
 		{
 		}
 
 		public OrderedSyncActor(Action<T, CancellationToken> action)
+			: base((t, c) => { action.Invoke(t, c); return true; })
 		{
-			_action = action;
-		}
-
-		public Task Push(T value)
-		{
-			_action.Invoke(value, CancellationToken.None);
-			return Task.FromResult(true);
-		}
-
-		public Task Push(IEnumerable<T> values)
-		{
-			// should do this with parallel foreach?
-			foreach (var value in values)
-				_action.Invoke(value, CancellationToken.None);
-			return Task.FromResult(true);
-		}
-
-
-		public Task Push(T value, CancellationToken token)
-		{
-			if (!token.IsCancellationRequested)
-			{
-				try
-				{
-					_action.Invoke(value, token);
-				}
-				catch (OperationCanceledException) { }
-				if (token.IsCancellationRequested)
-					return Task.Run(() => { }, token);
-				return Task.FromResult(true);
-			}
-			else
-				return Task.Run(() => { }, token);
-		}
-
-		public Task Push(IEnumerable<T> values, CancellationToken token)
-		{
-			if (!token.IsCancellationRequested)
-			{
-				foreach (var value in values)
-				{
-					try
-					{
-						_action.Invoke(value, token);
-					}
-					catch (OperationCanceledException) { }
-					if (token.IsCancellationRequested)
-						return Task.Run(() => { }, token);
-				}
-				return Task.FromResult(true);
-			}
-			else
-				return Task.Run(() => { }, token);
 		}
 	}
 
-	public class OrderedSyncActor<T, R> : OrderedSyncActor<T>, IActor<T, R>
+	public class OrderedSyncActor<T, R> : IActor<T, R>
 	{
 		private readonly Func<T, CancellationToken, R> _action;
 		public OrderedSyncActor(Func<T, R> action)
@@ -82,17 +32,16 @@ namespace Kts.Actors
 		}
 
 		public OrderedSyncActor(Func<T, CancellationToken, R> action)
-			: base((t, c) => action.Invoke(t, c))
 		{
 			_action = action;
 		}
 
-		new public Task<R> Push(T value)
+		public Task<R> Push(T value)
 		{
 			return Task.FromResult(_action.Invoke(value, CancellationToken.None));
 		}
 
-		new public Task<R[]> Push(IEnumerable<T> values)
+		public Task<R[]> Push(IEnumerable<T> values)
 		{
 			var rs = new List<R>();
 			foreach (var value in values)
@@ -101,7 +50,7 @@ namespace Kts.Actors
 		}
 
 
-		new public Task<R> Push(T value, CancellationToken token)
+		public Task<R> Push(T value, CancellationToken token)
 		{
 			if (!token.IsCancellationRequested)
 			{
@@ -119,7 +68,7 @@ namespace Kts.Actors
 				return Task.Run(() => default(R), token);
 		}
 
-		new public Task<R[]> Push(IEnumerable<T> values, CancellationToken token)
+		public Task<R[]> Push(IEnumerable<T> values, CancellationToken token)
 		{
 			if (!token.IsCancellationRequested)
 			{
@@ -138,6 +87,26 @@ namespace Kts.Actors
 			}
 			else
 				return Task.Run(() => new R[0], token);
+		}
+
+		Task IActor<T>.Push(T value)
+		{
+			return Push(value);
+		}
+
+		Task IActor<T>.Push(IEnumerable<T> values)
+		{
+			return Push(values);
+		}
+
+		Task IActor<T>.Push(T value, CancellationToken token)
+		{
+			return Push(value, token);
+		}
+
+		Task IActor<T>.Push(IEnumerable<T> values, CancellationToken token)
+		{
+			return Push(values, token);
 		}
 	}
 }

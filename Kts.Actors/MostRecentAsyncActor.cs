@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Kts.Actors
 {
+	/// <summary>
+	/// Executes on the primary thread pool. If a current task is executing, any tasks queued to run after it will be replaced by the most recent request.
+	/// </summary>
 	public class MostRecentAsyncActor<T> : IActor<T>
 	{
 		private readonly Action<T> _action;
