@@ -43,7 +43,7 @@ namespace Kts.Actors
 			return Push(value, CancellationToken.None);
 		}
 
-		public Task<R[]> Push(IEnumerable<T> values)
+		public Task<R[]> Push(IReadOnlyList<T> values)
 		{
 			return Push(values, CancellationToken.None);
 		}
@@ -59,7 +59,7 @@ namespace Kts.Actors
 			return task;
 		}
 
-		public async Task<R[]> Push(IEnumerable<T> values, CancellationToken token)
+		public async Task<R[]> Push(IReadOnlyList<T> values, CancellationToken token)
 		{
 			var results = new List<R>();
 			foreach (var value in values)
@@ -76,7 +76,7 @@ namespace Kts.Actors
 			return Push(value);
 		}
 
-		Task IActor<T>.Push(IEnumerable<T> values)
+		Task IActor<T>.Push(IReadOnlyList<T> values)
 		{
 			return Push(values);
 		}
@@ -86,7 +86,7 @@ namespace Kts.Actors
 			return Push(value, token);
 		}
 
-		Task IActor<T>.Push(IEnumerable<T> values, CancellationToken token)
+		Task IActor<T>.Push(IReadOnlyList<T> values, CancellationToken token)
 		{
 			return Push(values, token);
 		}

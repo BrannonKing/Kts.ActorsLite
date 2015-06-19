@@ -66,29 +66,29 @@ namespace Kts.Actors
 			_timer.Dispose();
 		}
 
-		public async Task<R> Push(T value)
+		public Task<R> Push(T value)
 		{
-			return await Push(value, CancellationToken.None);
+			return Push(value, CancellationToken.None);
 		}
 
-		public async Task<R[]> Push(IEnumerable<T> values)
+		public Task<R[]> Push(IReadOnlyList<T> values)
 		{
-			return await Push(values, CancellationToken.None);
+			return Push(values, CancellationToken.None);
 		}
 
-		public async Task<R> Push(T value, CancellationToken token)
+		public Task<R> Push(T value, CancellationToken token)
 		{
 			var source = new TaskCompletionSource<R>(Tuple.Create(value, token));
 			_queue.Enqueue(source);
-			return await source.Task;
+			return source.Task;
 		}
 
-		public async Task<R[]> Push(IEnumerable<T> values, CancellationToken token)
+		public Task<R[]> Push(IReadOnlyList<T> values, CancellationToken token)
 		{
 			var tasks = new List<Task<R>>();
 			foreach (var value in values)
 				tasks.Add(Push(value, token));
-			return await Task.WhenAll(tasks);
+			return Task.WhenAll(tasks);
 		}
 
 		Task IActor<T>.Push(T value)
@@ -96,7 +96,7 @@ namespace Kts.Actors
 			return Push(value);
 		}
 
-		Task IActor<T>.Push(IEnumerable<T> values)
+		Task IActor<T>.Push(IReadOnlyList<T> values)
 		{
 			return Push(values);
 		}
@@ -106,7 +106,7 @@ namespace Kts.Actors
 			return Push(value, token);
 		}
 
-		Task IActor<T>.Push(IEnumerable<T> values, CancellationToken token)
+		Task IActor<T>.Push(IReadOnlyList<T> values, CancellationToken token)
 		{
 			return Push(values, token);
 		}

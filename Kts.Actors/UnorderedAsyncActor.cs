@@ -41,7 +41,7 @@ namespace Kts.Actors
 			return await Task.Run(() => _action.Invoke(value, CancellationToken.None));
 		}
 
-		public async Task<R[]> Push(IEnumerable<T> values)
+		public async Task<R[]> Push(IReadOnlyList<T> values)
 		{
 			return await Task.WhenAll(values.Select(v => Push(v)));
 		}
@@ -51,7 +51,7 @@ namespace Kts.Actors
 			return await Task.Run(() => _action.Invoke(value, token), token);
 		}
 
-		public async Task<R[]> Push(IEnumerable<T> values, CancellationToken token)
+		public async Task<R[]> Push(IReadOnlyList<T> values, CancellationToken token)
 		{
 			return await Task.WhenAll(values.Select(v => Push(v, token)));
 		}
@@ -61,7 +61,7 @@ namespace Kts.Actors
 			return Push(value);
 		}
 
-		Task IActor<T>.Push(IEnumerable<T> values)
+		Task IActor<T>.Push(IReadOnlyList<T> values)
 		{
 			return Push(values);
 		}
@@ -71,7 +71,7 @@ namespace Kts.Actors
 			return Push(value, token);
 		}
 
-		Task IActor<T>.Push(IEnumerable<T> values, CancellationToken token)
+		Task IActor<T>.Push(IReadOnlyList<T> values, CancellationToken token)
 		{
 			return Push(values, token);
 		}
