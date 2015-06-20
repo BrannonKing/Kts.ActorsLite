@@ -49,16 +49,16 @@ namespace Kts.Actors
 			return Push(values, CancellationToken.None);
 		}
 
+		private long _counter;
 		public Task<R> Push(T value, CancellationToken token)
 		{
 			Task<R> task;
 			lock (_lock)
 			{
+				var local = ++_counter;
 				task = _previous.ContinueWith(prev =>
 				{
-					bool shouldRun = false;
-					lock (_lock)
-						shouldRun = prev == _previous;
+					var shouldRun = local == _counter;
 					if (shouldRun && !token.IsCancellationRequested)
 						return _action.Invoke(value, token);
 					return default(R);
