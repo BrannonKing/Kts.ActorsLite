@@ -153,5 +153,29 @@ namespace Kts.Actors.Tests
 
 			Assert.True(hits.Last());
 		}
+
+		class ExampleClass
+		{
+			private struct CriticalParams
+			{
+				public int Key;
+				public string Value;
+			}
+
+			public ExampleClass()
+			{
+				_criticalMethod = new MostRecentAsyncActor<CriticalParams>(cp => 
+				{
+					Console.WriteLine(cp.Key + " = " + cp.Value);
+				});
+			}
+
+			private readonly MostRecentAsyncActor<CriticalParams> _criticalMethod;
+
+			public void PrintAndSkipSomeIfTheyComeToFast(int key, string value)
+			{
+				_criticalMethod.Push(new CriticalParams { Key = key, Value = value });
+			}
+		}
 	}
 }
