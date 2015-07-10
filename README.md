@@ -5,7 +5,7 @@ This library uses the term "actor" because of Ruby; more specifically, Bernhardt
 
 # Library Worker Types:
 
-**Most Recent:** finish executing the current method and then skip to the method most recently pushed into the queue.
+**Most Recent:** finish executing the current method and then skip to the method most recently pushed into the queue. This feature is not available in TPL Dataflow (that I can see).
 
 **Ordered:** run all methods pushed on to the queue in order.
 
