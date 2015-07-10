@@ -172,9 +172,9 @@ namespace Kts.Actors.Tests
 
 			private readonly MostRecentAsyncActor<CriticalParams> _criticalMethod;
 
-			public void PrintAndSkipSomeIfTheyComeToFast(int key, string value)
+			public async void PrintAndSkipSomeIfTheyComeToFast(int key, string value)
 			{
-				_criticalMethod.Push(new CriticalParams { Key = key, Value = value });
+				await _criticalMethod.Push(new CriticalParams { Key = key, Value = value });
 			}
 		}
 	}

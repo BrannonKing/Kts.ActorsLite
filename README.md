@@ -3,10 +3,14 @@ This is a small library that supports various types of asynchronous methods in .
 
 This library uses the term "actor" because of Ruby; more specifically, Bernhardt's video [Boundaries](https://www.youtube.com/watch?v=yTkzNHF6rMs). It's more like "workers", though. They are queues of functions/methods to be executed.
 
-# The different types of workers in this library:
+# Library Worker Types:
+
 **Most Recent:** finish executing the current method and then skip to the method most recently pushed into the queue.
+
 **Ordered:** run all methods pushed on to the queue in order.
+
 **Periodic:** run all methods in order but only process them every so often.
+
 **Unordered:** pass the method straight onto the thread pool. Execution order is not guaranteed.
 
 # Example:
@@ -29,9 +33,9 @@ class ExampleClass
 
 	private readonly MostRecentAsyncActor<CriticalParams> _criticalMethod;
 
-	public void PrintAndSkipSomeIfTheyComeToFast(int key, string value)
+	public async void PrintAndSkipSomeIfTheyComeToFast(int key, string value)
 	{
-		_criticalMethod.Push(new CriticalParams { Key = key, Value = value });
+		await _criticalMethod.Push(new CriticalParams { Key = key, Value = value });
 	}
 }
 ```
