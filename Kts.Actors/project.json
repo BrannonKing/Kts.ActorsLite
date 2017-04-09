@@ -1,0 +1,10 @@
+{
+  "supports": {},
+  "dependencies": {
+			"CodeGeneration.Roslyn": "0.3.9",
+			"Microsoft.CodeAnalysis.CSharp": "2.0.0"
+  },
+  "frameworks": {
+    "netstandard1.4": {}
+  }
+}
