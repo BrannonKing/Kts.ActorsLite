@@ -40,6 +40,7 @@
     <Compile Include="ActorExtensions.cs" />
     <Compile Include="IActor.cs" />
     <Compile Include="MostRecentAsyncActor.cs" />
+    <Compile Include="MostRecentTaskScheduler.cs" />
     <Compile Include="PeriodicAsyncActor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="OrderedAsyncActor.cs" />
