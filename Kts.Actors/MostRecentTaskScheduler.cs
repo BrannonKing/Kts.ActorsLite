@@ -36,6 +36,11 @@ namespace Kts.Actors
 			}
 		}
 
+		public void Enqueue(Task task)
+		{
+			QueueTask(task);
+		}
+
 		protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
 		{
 			return false;
