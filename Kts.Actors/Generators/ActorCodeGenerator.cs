@@ -52,13 +52,8 @@ namespace Kts.Actors.Generators
 			// for his block 
 
 			var arguments = SeparatedList<ArgumentSyntax>();
-			foreach (var parameter in methodDS.ParameterList.ChildNodes())
-			{
-				arguments.Add(Argument(IdentifierName(parameter.va)));
-				//arguments.AddToken(Token(SyntaxKind.CommaToken));
-			}
-			if (arguments.Count > 0)
-				arguments.RemoveAt(arguments.Count - 1);
+			foreach (var parameter in methodDS.ParameterList.ChildNodes().OfType<IdentifierNameSyntax>()) // not sure that's right
+				arguments.Add(Argument(parameter));
 
 			var propertyName = methodDS.Identifier.ValueText + "_Actor";
 			var newMethod = MethodDeclaration(methodDS.ReturnType, methodDS.Identifier)
@@ -169,14 +164,8 @@ namespace Kts.Actors.Generators
 						.WithSemicolonToken(
 							Token(SyntaxKind.SemicolonToken)))))}))
 			
-			// if the method doesn't return a task blow chunks
-			// make a new private ro field that matches our chosen actor type
-			var first = methodDS.Body.GetFirstToken();
-			if (first == null)
-				return Task.FromResult(results);
-
-			//var last = methodDS.WithExpressionBody(() => )
-			//methodDS.Body..InsertNodesBefore(first, )
+			results.Add(newMethod);
+			results.Add(newProperty);
 			return Task.FromResult(results);
 		}
 	}
