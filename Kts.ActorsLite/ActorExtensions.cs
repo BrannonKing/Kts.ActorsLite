@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Kts.Actors
+namespace Kts.ActorsLite
 {
 	public static class ActorExtensions
 	{

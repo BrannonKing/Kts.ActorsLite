@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kts.Actors
+namespace Kts.ActorsLite
 {
 	/// <summary>
 	/// Executes the method immediately (on the caller thread) upon any call.

@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Kts.Actors
+namespace Kts.ActorsLite
 {
-	public class OrderedTaskScheduler: TaskScheduler
+	public class OrderedAsyncTaskScheduler: TaskScheduler
 	{
 		private readonly ConcurrentQueue<Task> _tasks = new ConcurrentQueue<Task>();
 		private readonly MostRecentAsyncActor<object> _processor;
-		public OrderedTaskScheduler()
+		public OrderedAsyncTaskScheduler()
 		{
 			_processor = new MostRecentAsyncActor<object>(o => Process());
 		}
@@ -36,6 +36,11 @@ namespace Kts.Actors
 		protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
 		{
 			return false;
+		}
+
+		protected override bool TryDequeue(Task task)
+		{
+			return false; // ConcurrentQueue doesn't lend itself to arbitrary removal
 		}
 	}
 }

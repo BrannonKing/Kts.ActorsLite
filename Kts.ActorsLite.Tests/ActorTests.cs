@@ -5,8 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
+using Kts.ActorsLite;
 
-namespace Kts.Actors.Tests
+namespace Kts.ActorsLite.Tests
 {
 	public class ActorTests
 	{
@@ -34,7 +35,7 @@ namespace Kts.Actors.Tests
 		}
 
 		[Fact]
-		public void AllGetDone()
+		public async Task AllGetDone()
 		{
 			var rand = new Random(42);
 			const int multiplier = 20, cnt = 1000;
@@ -45,7 +46,7 @@ namespace Kts.Actors.Tests
 				{
 					tasks.Add(actor.Push(i + 1));
 				}
-				Task.WhenAll(tasks).Wait();
+				await Task.WhenAll(tasks);
 
 				if (actor is MostRecentAsyncActor<int, int>)
 				{
@@ -80,20 +81,20 @@ namespace Kts.Actors.Tests
 		}
 
 		[Fact]
-		public void TestMiddleSkipped()
+		public async Task TestMiddleSkipped()
 		{
 			var hits = new bool[3];
 
 			Action<int, CancellationToken> t = (i, tok) =>
 			{
 				hits[i] = true;
-				Thread.Sleep(20);
+				Task.Delay(20).Wait();
 			};
 
 			var queue = new MostRecentAsyncActor<int>(t);
 			queue.Push(0);
 			queue.Push(1);
-			queue.Push(2).Wait();
+			await queue.Push(2);
 
 			// the hitFirst value is arbitrary (based on timing) and not particularly related to the goal
 			Assert.False(hits[1]);
@@ -101,14 +102,14 @@ namespace Kts.Actors.Tests
 		}
 
 		[Fact]
-		public void TestRobustness()
+		public async Task TestRobustness()
 		{
 			var rand = new Random(42);
 			int lastAction = -1, lastAction2 = 42;
 			Action<int, CancellationToken> t = (r, tok) =>
 			{
 				lastAction = r;
-				Thread.Sleep(rand.Next(100));
+				Task.Delay(rand.Next(100)).Wait();
 			};
 			var queue = new MostRecentAsyncActor<int>(t);
 			for (var i = 0; i < 1000; i++)
@@ -118,16 +119,16 @@ namespace Kts.Actors.Tests
 
 				var task = queue.Push(r);
 				if (i == 999)
-					task.Wait();
+					await task;
 				else
-					Thread.Sleep(rand.Next(150));
+					await Task.Delay(rand.Next(150));
 			}
 
 			Assert.Equal(lastAction, lastAction2);
 		}
 
 		[Fact]
-		public void TestMostRecentSubAdd()
+		public async Task TestMostRecentSubAdd()
 		{
 			// queue some tasks that take 200ms 100ms apart
 			var hits = new bool[10];
@@ -136,7 +137,7 @@ namespace Kts.Actors.Tests
 				if (!tok.IsCancellationRequested)
 				{
 					hits[r] = true;
-					Thread.Sleep(100);
+					Task.Delay(100).Wait();
 				}
 			};
 
@@ -145,10 +146,10 @@ namespace Kts.Actors.Tests
 			for (var i = 0; i < hits.Length; i++)
 			{
 				last = queue.Push(i);
-				Thread.Sleep(45);
+				await Task.Delay(45);
 			}
 			if (last != null)
-				last.Wait();
+				await last;
 
 			Assert.True(hits.Last());
 		}

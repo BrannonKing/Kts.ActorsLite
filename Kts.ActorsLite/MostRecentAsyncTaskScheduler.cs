@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Kts.Actors
+namespace Kts.ActorsLite
 {
-	public class MostRecentTaskScheduler: TaskScheduler
+	public class MostRecentAsyncTaskScheduler: TaskScheduler
 	{
 		protected override IEnumerable<Task> GetScheduledTasks()
 		{
@@ -53,9 +53,12 @@ namespace Kts.Actors
 			lock (_lock)
 			{
 				if (task == _previous)
+				{
 					++_counter; // this should technically make it skip to the next
+					return true;
+				}
 			}
-			return base.TryDequeue(task);
+			return false;
 		}
 	}
 }

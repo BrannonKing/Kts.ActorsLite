@@ -4,8 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
+using Kts.ActorsLite;
 
-namespace Kts.Actors.Tests
+namespace Kts.ActorsLite.Tests
 {
 	public class SchedulerTests
 	{
@@ -17,7 +18,7 @@ namespace Kts.Actors.Tests
 		}
 
 		[Fact]
-		public void TestMostRecentScheduler()
+		public async Task TestMostRecentScheduler()
 		{
 			// queue some tasks that take 200ms 100ms apart
 			var hits = new bool[10];
@@ -26,26 +27,27 @@ namespace Kts.Actors.Tests
 				if (!tok.IsCancellationRequested)
 				{
 					hits[r] = true;
-					Thread.Sleep(100);
+					Task.Delay(100).Wait();
 				}
 			};
 
-			var scheduler = new MostRecentTaskScheduler();
+			var scheduler = new MostRecentAsyncTaskScheduler();
 			Task last = null;
 			for (var i = 0; i < hits.Length; i++)
 			{
 				var local = i;
 				last = new Task(() => t.Invoke(local, CancellationToken.None));
 				last.Start(scheduler);
-				Thread.Sleep(45);
+				await Task.Delay(45);
 			}
-			last?.Wait();
+			if (last != null)
+				await last;
 
 			Assert.True(hits.Last());
 		}
 
 		[Fact]
-		public void TestOrderedScheduler()
+		public async Task TestOrderedScheduler()
 		{
 			// queue some tasks that take 200ms 100ms apart
 			var hits = new int[50];
@@ -54,11 +56,11 @@ namespace Kts.Actors.Tests
 				if (!tok.IsCancellationRequested)
 				{
 					hits[r] = r;
-					Thread.Sleep(20);
+					Task.Delay(20).Wait();
 				}
 			};
 
-			var scheduler = new OrderedTaskScheduler();
+			var scheduler = new OrderedAsyncTaskScheduler();
 			Task last = null;
 			for (var i = 0; i < hits.Length; i++)
 			{
@@ -66,7 +68,8 @@ namespace Kts.Actors.Tests
 				last = new Task(() => t.Invoke(local, CancellationToken.None));
 				last.Start(scheduler);
 			}
-			last?.Wait();
+			if (last != null)
+				await last;
 
 			for (var i = 0; i < hits.Length; i++)
 				Assert.Equal(i, hits[i]);

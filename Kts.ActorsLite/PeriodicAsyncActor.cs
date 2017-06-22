@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kts.Actors
+namespace Kts.ActorsLite
 {
 	public class PeriodicAsyncActor<T> : PeriodicAsyncActor<T, bool> // this hierarchy feels a little backward
 	{

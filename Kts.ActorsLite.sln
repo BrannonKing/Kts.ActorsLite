@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Actors", "Kts.Actors\Kts.Actors.csproj", "{7E3F57C2-4989-4A14-8756-653F6F04EDF3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.ActorsLite", "Kts.ActorsLite\Kts.ActorsLite.csproj", "{7E3F57C2-4989-4A14-8756-653F6F04EDF3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.Actors.Tests", "Kts.Actors.Tests\Kts.Actors.Tests.csproj", "{E9AE4543-E934-42AB-9A55-6F29AA9F5248}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kts.ActorsLite.Tests", "Kts.ActorsLite.Tests\Kts.ActorsLite.Tests.csproj", "{E9AE4543-E934-42AB-9A55-6F29AA9F5248}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

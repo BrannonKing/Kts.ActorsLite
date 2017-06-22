@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net461</TargetFramework>
+		<TargetFramework>netstandard1.3</TargetFramework>
 		<Authors>Brannon King</Authors>
-		<Company>Kingtown Software</Company>
+		<Company></Company>
 		<Description>This package contains some Task Schedulers for executing tasks in order and skipping tasks in the middle of the queue. It also contains task queues (light-weight actors) that can be used directly for the same as well as a periodic execution.</Description>
 		<Copyright />
 		<PackageProjectUrl>https://github.com/BrannonKing/Kts.ActorsLite</PackageProjectUrl>
@@ -10,5 +10,6 @@
 		<Product>Kts.ActorsLite</Product>
 		<PackageTags>actors schedulers tasks TPL</PackageTags>
 		<PackageLicenseUrl>https://github.com/BrannonKing/Kts.Actors/blob/master/LICENSE</PackageLicenseUrl>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	</PropertyGroup>
 </Project>

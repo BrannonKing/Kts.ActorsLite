@@ -3,39 +3,40 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kts.Actors
+namespace Kts.ActorsLite
 {
 	/// <summary>
-	/// Executes on the primary thread pool. If a task is already executing, the incoming request is queued on the back of that.
+	/// Executes on the primary thread pool. If a current task is executing, any tasks queued to run after it will be replaced by the most recent request.
 	/// </summary>
-	public class OrderedAsyncActor<T> : OrderedAsyncActor<T, bool>
+	public class MostRecentAsyncActor<T> : MostRecentAsyncActor<T, bool>, IActor<T>
 	{
-		public OrderedAsyncActor(Action<T> action)
+		public MostRecentAsyncActor(Action<T> action)
 			: this((t, c) => action.Invoke(t))
 		{
 		}
 
-		public OrderedAsyncActor(Action<T, CancellationToken> action)
+		public MostRecentAsyncActor(Action<T, CancellationToken> action)
 			: base((t, c) => { action.Invoke(t, c); return true; })
 		{
 		}
 	}
 
-	public class OrderedAsyncActor<T, R> : IActor<T, R>
+	public class MostRecentAsyncActor<T, R> : IActor<T, R>
 	{
 		private readonly Func<T, CancellationToken, R> _action;
-		private Task _previous = Task.FromResult(true);
-		private readonly object _lock = new object();
-		public OrderedAsyncActor(Func<T, R> action)
+		protected Task _previous = Task.FromResult(true);
+		protected readonly object _lock = new object();
+
+		public MostRecentAsyncActor(Func<T, R> action)
 			: this((t, c) => action.Invoke(t))
 		{
 		}
 
-		public OrderedAsyncActor(Func<T, CancellationToken, R> action)
+		public MostRecentAsyncActor(Func<T, CancellationToken, R> action)
 		{
 			_action = action;
 		}
-
+		
 		public Task<R> Push(T value)
 		{
 			return Push(value, CancellationToken.None);
@@ -46,12 +47,20 @@ namespace Kts.Actors
 			return Push(values, CancellationToken.None);
 		}
 
+		private long _counter;
 		public Task<R> Push(T value, CancellationToken token)
 		{
 			Task<R> task;
 			lock (_lock)
 			{
-				task = _previous.ContinueWith(prev => _action.Invoke(value, token), token);
+				var local = ++_counter;
+				task = _previous.ContinueWith(prev =>
+				{
+					var shouldRun = local == _counter;
+					if (shouldRun && !token.IsCancellationRequested)
+						return _action.Invoke(value, token);
+					return default(R);
+				}, token);
 				_previous = task;
 			}
 			return task;
@@ -59,14 +68,10 @@ namespace Kts.Actors
 
 		public async Task<R[]> Push(IReadOnlyList<T> values, CancellationToken token)
 		{
-			var results = new List<R>();
-			foreach (var value in values)
-			{
-				if (token.IsCancellationRequested)
-					break;
-				results.Add(await Push(value, token));
-			}
-			return results.ToArray();
+			var r = await Push(values[values.Count - 1], token);
+			var arr = new R[values.Count];
+			arr[values.Count - 1] = r;
+			return arr;
 		}
 
 		Task IActor<T>.Push(T value)
