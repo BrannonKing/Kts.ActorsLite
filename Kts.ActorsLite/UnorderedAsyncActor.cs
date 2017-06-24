@@ -40,7 +40,7 @@ namespace Kts.ActorsLite
 			return await Task.Run(() => _action.Invoke(value, CancellationToken.None));
 		}
 
-		public async Task<R[]> Push(IReadOnlyList<T> values)
+		public async Task<R[]> PushMany(IReadOnlyList<T> values)
 		{
 			return await Task.WhenAll(values.Select(v => Push(v)));
 		}
@@ -50,7 +50,7 @@ namespace Kts.ActorsLite
 			return await Task.Run(() => _action.Invoke(value, token), token);
 		}
 
-		public async Task<R[]> Push(IReadOnlyList<T> values, CancellationToken token)
+		public async Task<R[]> PushMany(IReadOnlyList<T> values, CancellationToken token)
 		{
 			return await Task.WhenAll(values.Select(v => Push(v, token)));
 		}
@@ -60,9 +60,9 @@ namespace Kts.ActorsLite
 			return Push(value);
 		}
 
-		Task IActor<T>.Push(IReadOnlyList<T> values)
+		Task IActor<T>.PushMany(IReadOnlyList<T> values)
 		{
-			return Push(values);
+			return PushMany(values);
 		}
 
 		Task IActor<T>.Push(T value, CancellationToken token)
@@ -70,9 +70,9 @@ namespace Kts.ActorsLite
 			return Push(value, token);
 		}
 
-		Task IActor<T>.Push(IReadOnlyList<T> values, CancellationToken token)
+		Task IActor<T>.PushMany(IReadOnlyList<T> values, CancellationToken token)
 		{
-			return Push(values, token);
+			return PushMany(values, token);
 		}
 	}
 }

@@ -30,7 +30,7 @@ namespace Kts.ActorsLite
 		protected override void QueueTask(Task task)
 		{
 			_tasks.Enqueue(task);
-			_processor.Push((object)null);
+			_processor.Push(null);
 		}
 
 		protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)

@@ -18,7 +18,7 @@ namespace Kts.ActorsLite.Tests
 		}
 
 		[Fact]
-		public async Task TestMostRecentScheduler()
+		public async Task TestMostRecentAsyncTaskScheduler()
 		{
 			// queue some tasks that take 200ms 100ms apart
 			var hits = new bool[10];
@@ -47,7 +47,7 @@ namespace Kts.ActorsLite.Tests
 		}
 
 		[Fact]
-		public async Task TestOrderedScheduler()
+		public async Task TestOrderedAsyncScheduler()
 		{
 			// queue some tasks that take 200ms 100ms apart
 			var hits = new int[50];
@@ -73,6 +73,30 @@ namespace Kts.ActorsLite.Tests
 
 			for (var i = 0; i < hits.Length; i++)
 				Assert.Equal(i, hits[i]);
+		}
+
+		[Fact]
+		public void TestOrderedSyncTaskScheduler()
+		{
+			int x = 0;
+			var task = new Task(() => x++);
+			var scheduler = new OrderedSyncTaskScheduler();
+			task.Start(scheduler);
+			Assert.True(task.IsCompleted);
+			Assert.Equal(1, x);
+		}
+
+		[Fact]
+		public async Task TestPeriodicAsyncTaskScheduler()
+		{
+			int x = 0;
+			var scheduler = new PeriodicAsyncTaskScheduler(5);
+			for (int i = 0; i < 10; i++)
+				new Task(() => x++).Start(scheduler);
+
+			await Task.Delay(15);
+			Assert.Equal(10, x);
+			scheduler.Dispose();
 		}
 	}
 }

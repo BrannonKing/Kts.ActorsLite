@@ -1,38 +1,62 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
 	public class PeriodicAsyncTaskScheduler: TaskScheduler, IDisposable
 	{
-		private readonly List<Task> _tasks = new List<Task>();
-		private readonly PeriodicAsyncActor<object> _processor;
-		public PeriodicAsyncTaskScheduler(int periodMs)
+		private readonly ConcurrentQueue<Task> _tasks = new ConcurrentQueue<Task>();
+		private readonly Timer _timer;
+		private readonly Action _onOverrun;
+
+		public PeriodicAsyncTaskScheduler(int periodMs, Action onOverrun = null)
 		{
-			_processor = new PeriodicAsyncActor<object>(o => Process(), periodMs);
-			_processor.Push(null);
+			// the threading timer uses the thread pool
+			// its callback method is re-entrant in the case of an overrun
+			// we can't have that here; we always want them to execute in order
+			// we need to warn the user obout overruns somehow
+			// biggest issue: Tasks are one-shots
+
+			_onOverrun = onOverrun;
+			_timer = new Timer(Callback, null, 1, periodMs);
 		}
 
 		protected override IEnumerable<Task> GetScheduledTasks()
 		{
-			lock(_tasks)
-				return _tasks.ToArray();
+			return _tasks;
 		}
 
 		public override int MaximumConcurrencyLevel => 1;
 
-		private void Process()
+		private readonly object _overrunLock = new object();
+		private void Callback(object state)
 		{
-			foreach (var task in GetScheduledTasks())
-				TryExecuteTask(task);
+			if (!Monitor.TryEnter(_overrunLock))
+			{
+				System.Diagnostics.Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted time period.");
+				if (_onOverrun != null)
+					_onOverrun.Invoke();
+			}
+			else
+			{
+				try
+				{
+					while (_tasks.TryDequeue(out Task task))
+						TryExecuteTask(task);
+				}
+				finally
+				{
+					Monitor.Exit(_overrunLock);
+				}
+			}
 		}
 
 		protected override void QueueTask(Task task)
 		{
-			lock (_tasks)
-				_tasks.Add(task);
+			_tasks.Enqueue(task);
 		}
 
 		protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
@@ -42,13 +66,12 @@ namespace Kts.ActorsLite
 
 		protected override bool TryDequeue(Task task)
 		{
-			lock (_tasks)
-				return _tasks.Remove(task);
+			return false;
 		}
 
 		public void Dispose()
 		{
-			_processor.Dispose();
+			_timer.Dispose();
 		}
 	}
 }

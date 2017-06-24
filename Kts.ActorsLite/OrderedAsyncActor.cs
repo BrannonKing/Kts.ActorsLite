@@ -41,9 +41,9 @@ namespace Kts.ActorsLite
 			return Push(value, CancellationToken.None);
 		}
 
-		public Task<R[]> Push(IReadOnlyList<T> values)
+		public Task<R[]> PushMany(IReadOnlyList<T> values)
 		{
-			return Push(values, CancellationToken.None);
+			return PushMany(values, CancellationToken.None);
 		}
 
 		public Task<R> Push(T value, CancellationToken token)
@@ -57,7 +57,7 @@ namespace Kts.ActorsLite
 			return task;
 		}
 
-		public async Task<R[]> Push(IReadOnlyList<T> values, CancellationToken token)
+		public async Task<R[]> PushMany(IReadOnlyList<T> values, CancellationToken token)
 		{
 			var results = new List<R>();
 			foreach (var value in values)
@@ -74,9 +74,9 @@ namespace Kts.ActorsLite
 			return Push(value);
 		}
 
-		Task IActor<T>.Push(IReadOnlyList<T> values)
+		Task IActor<T>.PushMany(IReadOnlyList<T> values)
 		{
-			return Push(values);
+			return PushMany(values);
 		}
 
 		Task IActor<T>.Push(T value, CancellationToken token)
@@ -84,9 +84,9 @@ namespace Kts.ActorsLite
 			return Push(value, token);
 		}
 
-		Task IActor<T>.Push(IReadOnlyList<T> values, CancellationToken token)
+		Task IActor<T>.PushMany(IReadOnlyList<T> values, CancellationToken token)
 		{
-			return Push(values, token);
+			return PushMany(values, token);
 		}
 	}
 }

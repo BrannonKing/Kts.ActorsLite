@@ -92,10 +92,11 @@ namespace Kts.ActorsLite.Tests
 			};
 
 			var queue = new MostRecentAsyncActor<int>(t);
-			queue.Push(0);
-			queue.Push(1);
+			var t1 = queue.Push(0);
+			var t2 = queue.Push(1);
 			await queue.Push(2);
-
+			Assert.True(t1.IsCompleted);
+			Assert.True(t2.IsCompleted);
 			// the hitFirst value is arbitrary (based on timing) and not particularly related to the goal
 			Assert.False(hits[1]);
 			Assert.True(hits[2]);
