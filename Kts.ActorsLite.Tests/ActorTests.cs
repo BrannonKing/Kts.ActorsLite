@@ -155,6 +155,52 @@ namespace Kts.ActorsLite.Tests
 			Assert.True(hits.Last());
 		}
 
+		private IEnumerable<IActor<T>> CreateActors<T>(SetAction<T> func)
+		{
+			yield return new OrderedSyncActor<T>(func);
+			yield return new OrderedAsyncActor<T>(func);
+			//yield return new UnorderedAsyncActor<T>(func);
+			yield return new PeriodicAsyncActor<T>(func, 5);
+			yield return new MostRecentAsyncActor<T>(func);
+		}
+
+		[Fact]
+		public async Task TestFirstAndLast()
+		{
+			// queue some tasks that take 200ms 100ms apart
+			var firsts = new bool[3];
+			var lasts = new bool[3];
+			int spot = 0;
+			SetAction<int> t = (r, tok, f, l) =>
+			{
+				firsts[spot] = f;
+				lasts[spot++] = l;
+			};
+
+			foreach (var queue in CreateActors(t))
+			{
+				firsts = new bool[3];
+				lasts = new bool[3];
+				spot = 0;
+				Task last = null;
+
+				//for (var i = 0; i < 3; i++)
+				//{
+				//	last = queue.Push(i);
+				//}
+				last = queue.PushMany(new[] { 1, 2, 3 });
+				if (last != null)
+					await last;
+
+				Assert.True(firsts[0]);
+				Assert.True(lasts[2]);
+				Assert.False(firsts[1]);
+				Assert.False(firsts[2]);
+				Assert.False(lasts[0]);
+				Assert.False(lasts[1]);
+			}
+		}
+
 		class ExampleClass
 		{
 			private struct CriticalParams

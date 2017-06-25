@@ -16,14 +16,19 @@ namespace Kts.ActorsLite
 		}
 
 		public OrderedAsyncActor(Action<T, CancellationToken> action)
-			: base((t, c) => { action.Invoke(t, c); return true; })
+			: base((t, c, f, l) => { action.Invoke(t, c); return true; })
+		{
+		}
+
+		public OrderedAsyncActor(SetAction<T> action)
+			: base((t, c, f, l) => { action.Invoke(t, c, f, l); return true; })
 		{
 		}
 	}
 
 	public class OrderedAsyncActor<T, R> : IActor<T, R>
 	{
-		private readonly Func<T, CancellationToken, R> _action;
+		private readonly SetFunc<T, R> _action;
 		private Task _previous = Task.FromResult(true);
 		private readonly object _lock = new object();
 		public OrderedAsyncActor(Func<T, R> action)
@@ -32,6 +37,11 @@ namespace Kts.ActorsLite
 		}
 
 		public OrderedAsyncActor(Func<T, CancellationToken, R> action)
+			: this((t, c, f, l) => action.Invoke(t, c))
+		{
+		}
+
+		public OrderedAsyncActor(SetFunc<T, R> action)
 		{
 			_action = action;
 		}
@@ -48,11 +58,23 @@ namespace Kts.ActorsLite
 
 		public Task<R> Push(T value, CancellationToken token)
 		{
-			Task<R> task;
+			Task<R> task = null;
 			lock (_lock)
 			{
-				task = _previous.ContinueWith(prev => _action.Invoke(value, token), token);
+				var isFirst = _previous.IsCompleted;
+				Func<bool> isLast = () => { lock (_lock) return _previous == task; }; // hoping for by-ref closure on task here
+
+				task = _previous.ContinueWith(prev =>
+				{
+					var ret = _action.Invoke(value, token, isFirst, isLast.Invoke());
+					return ret;
+
+				}, TaskContinuationOptions.PreferFairness);
 				_previous = task;
+				task.ContinueWith(prev =>
+				{
+							
+				}, TaskContinuationOptions.ExecuteSynchronously);
 			}
 			return task;
 		}

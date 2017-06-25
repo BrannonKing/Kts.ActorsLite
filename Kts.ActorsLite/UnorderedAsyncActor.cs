@@ -20,24 +20,34 @@ namespace Kts.ActorsLite
 			: base((t, c) => { action.Invoke(t, c); return true; })
 		{
 		}
+
+		public UnorderedAsyncActor(SetAction<T> action)
+			: base((t, c, f, l) => { action.Invoke(t, c, f, l); return true; })
+		{
+		}
 	}
 
 	public class UnorderedAsyncActor<T, R> : IActor<T, R>
 	{
-		private readonly Func<T, CancellationToken, R> _action;
+		private readonly SetFunc<T, R> _action;
 		public UnorderedAsyncActor(Func<T, R> action)
-			: this((t, c) => action.Invoke(t))
+			: this((t, c, f, l) => action.Invoke(t))
 		{
 		}
 
 		public UnorderedAsyncActor(Func<T, CancellationToken, R> action)
+			: this((t, c, f, l) => action.Invoke(t, c))
+		{
+		}
+
+		public UnorderedAsyncActor(SetFunc<T, R> action)
 		{
 			_action = action;
 		}
 		
 		public async Task<R> Push(T value)
 		{
-			return await Task.Run(() => _action.Invoke(value, CancellationToken.None));
+			return await Task.Run(() => _action.Invoke(value, CancellationToken.None, true, true));
 		}
 
 		public async Task<R[]> PushMany(IReadOnlyList<T> values)
@@ -47,7 +57,7 @@ namespace Kts.ActorsLite
 
 		public async Task<R> Push(T value, CancellationToken token)
 		{
-			return await Task.Run(() => _action.Invoke(value, token), token);
+			return await Task.Run(() => _action.Invoke(value, token, true, true), token); // not sure we want that last token passed to Task.Run or not
 		}
 
 		public async Task<R[]> PushMany(IReadOnlyList<T> values, CancellationToken token)

@@ -10,37 +10,47 @@ namespace Kts.ActorsLite
 	{
 
 		public PeriodicAsyncActor(Action<T> action, int periodMs)
-			: this((t, c) => action.Invoke(t), periodMs)
+			: base((t, c, f, l) => { action.Invoke(t); return true; }, periodMs)
 		{
 		}
 		
 		public PeriodicAsyncActor(Action<T, CancellationToken> action, int periodMs)
-			: base((t, c) => { action.Invoke(t, c); return true; }, periodMs)
+			: base((t, c, f, l) => { action.Invoke(t, c); return true; }, periodMs)
+		{
+		}
+
+		public PeriodicAsyncActor(SetAction<T> action, int periodMs)
+			: base((t, c, f, l) => { action.Invoke(t, c, f, l); return true; }, periodMs)
 		{
 		}
 	}
 
 	public class PeriodicAsyncActor<T, R> : IActor<T, R>, IDisposable
 	{
-		private readonly Func<T, CancellationToken, R> _action;
+		private readonly SetFunc<T, R> _action;
 		protected Task _previous = Task.FromResult(true);
 		protected readonly ConcurrentQueue<TaskCompletionSource<R>> _queue = new ConcurrentQueue<TaskCompletionSource<R>>();
 		private readonly Timer _timer;
 
 		public PeriodicAsyncActor(Func<T, R> action, int periodMs)
-			: this((t, c) => action.Invoke(t), periodMs)
+			: this((t, c, f, l) => action.Invoke(t), periodMs)
 		{
 		}
 
 		public PeriodicAsyncActor(Func<T, CancellationToken, R> action, int periodMs)
+			: this((t, c, f, l) => action.Invoke(t, c), periodMs)
+		{
+		}
+
+		public PeriodicAsyncActor(SetFunc<T, R> action, int periodMs)
 		{
 			_action = action;
-
 			_timer = new Timer(Callback, null, 1, periodMs);
 		}
 
 		private void Callback(object state)
 		{
+			var isFirst = true;
 			while (_queue.TryDequeue(out var source))
 			{
 				var tuple = (Tuple<T, CancellationToken>)source.Task.AsyncState;
@@ -52,7 +62,9 @@ namespace Kts.ActorsLite
 				}
 				else
 				{
-					var result = _action.Invoke(value, token);
+					var empty = _queue.IsEmpty;
+					var result = _action.Invoke(value, token, isFirst, empty);
+					isFirst = empty;
 					source.SetResult(result);
 				}
 			}

@@ -19,20 +19,30 @@ namespace Kts.ActorsLite
 			: base((t, c) => { action.Invoke(t, c); return true; })
 		{
 		}
+
+		public MostRecentAsyncActor(SetAction<T> action)
+			: base((t, c, f, l) => { action.Invoke(t, c, f, l); return true; })
+		{
+		}
 	}
 
 	public class MostRecentAsyncActor<T, R> : IActor<T, R>
 	{
-		private readonly Func<T, CancellationToken, R> _action;
+		private readonly SetFunc<T, R> _action;
 		protected Task _previous = Task.FromResult(true);
 		protected readonly object _lock = new object();
 
 		public MostRecentAsyncActor(Func<T, R> action)
-			: this((t, c) => action.Invoke(t))
+			: this((t, c, f, l) => action.Invoke(t))
 		{
 		}
 
 		public MostRecentAsyncActor(Func<T, CancellationToken, R> action)
+			: this((t, c, f, l) => action.Invoke(t, c))
+		{
+		}
+
+		public MostRecentAsyncActor(SetFunc<T, R> action)
 		{
 			_action = action;
 		}
@@ -54,11 +64,12 @@ namespace Kts.ActorsLite
 			lock (_lock)
 			{
 				var local = ++_counter;
+				var isFirst = _previous.IsCompleted;
 				task = _previous.ContinueWith(prev =>
 				{
 					var shouldRun = local == _counter;
 					if (shouldRun && !token.IsCancellationRequested)
-						return _action.Invoke(value, token);
+						return _action.Invoke(value, token, isFirst, true);
 					return default(R);
 				}, TaskContinuationOptions.PreferFairness); // don't pass the token in here so that all tasks succeed even if they don't do anything
 				_previous = task;

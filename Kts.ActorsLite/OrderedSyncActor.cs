@@ -19,31 +19,41 @@ namespace Kts.ActorsLite
 			: base((t, c) => { action.Invoke(t, c); return true; })
 		{
 		}
+
+		public OrderedSyncActor(SetAction<T> action)
+			: base((t, c, f, l) => { action.Invoke(t, c, f, l); return true; })
+		{
+		}
 	}
 
 	public class OrderedSyncActor<T, R> : IActor<T, R>
 	{
-		private readonly Func<T, CancellationToken, R> _action;
+		private readonly SetFunc<T, R> _action;
 		public OrderedSyncActor(Func<T, R> action)
-			: this((t, c) => action.Invoke(t))
+			: this((t, c, f, l) => action.Invoke(t))
 		{
 		}
 
 		public OrderedSyncActor(Func<T, CancellationToken, R> action)
+			: this((t, c, f, l) => action.Invoke(t, c))
+		{
+		}
+
+		public OrderedSyncActor(SetFunc<T, R> action)
 		{
 			_action = action;
 		}
 
 		public Task<R> Push(T value)
 		{
-			return Task.FromResult(_action.Invoke(value, CancellationToken.None));
+			return Task.FromResult(_action.Invoke(value, CancellationToken.None, true, true));
 		}
 
 		public Task<R[]> PushMany(IReadOnlyList<T> values)
 		{
 			var rs = new List<R>();
-			foreach (var value in values)
-				rs.Add(_action.Invoke(value, CancellationToken.None));
+			for (var i = 0; i < values.Count; i++)
+				rs.Add(_action.Invoke(values[i], CancellationToken.None, i == 0, i == values.Count - 1));
 			return Task.FromResult(rs.ToArray());
 		}
 
@@ -55,7 +65,7 @@ namespace Kts.ActorsLite
 				var ret = default(R);
 				try
 				{
-					ret = _action.Invoke(value, token);
+					ret = _action.Invoke(value, token, true, true);
 				}
 				catch (OperationCanceledException) { }
 				if (token.IsCancellationRequested)
@@ -71,11 +81,11 @@ namespace Kts.ActorsLite
 			if (!token.IsCancellationRequested)
 			{
 				var rs = new List<R>();
-				foreach (var value in values)
+				for (var i = 0; i < values.Count; i++)
 				{
 					try
 					{
-						rs.Add(_action.Invoke(value, token));
+						rs.Add(_action.Invoke(values[i], token, i == 0, i == values.Count - 1));
 					}
 					catch (OperationCanceledException) { }
 					if (token.IsCancellationRequested)

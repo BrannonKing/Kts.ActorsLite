@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
+	public delegate void SetAction<T>(T value, CancellationToken token, bool isFirstInSet = false, bool isLastInSet = false);
+	public delegate R SetFunc<T, R>(T value, CancellationToken token, bool isFirstInSet = false, bool isLastInSet = false);
+
 	public interface IActor<T>
 	{
 		Task Push(T value);
