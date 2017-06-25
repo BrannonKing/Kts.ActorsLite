@@ -60,7 +60,7 @@ namespace Kts.ActorsLite
 					if (shouldRun && !token.IsCancellationRequested)
 						return _action.Invoke(value, token);
 					return default(R);
-				}, token);
+				}, TaskContinuationOptions.PreferFairness); // don't pass the token in here so that all tasks succeed even if they don't do anything
 				_previous = task;
 			}
 			return task;
