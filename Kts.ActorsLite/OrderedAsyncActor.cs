@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -71,24 +72,21 @@ namespace Kts.ActorsLite
 
 				}, TaskContinuationOptions.PreferFairness);
 				_previous = task;
-				task.ContinueWith(prev =>
-				{
-							
-				}, TaskContinuationOptions.ExecuteSynchronously);
 			}
 			return task;
 		}
 
 		public async Task<R[]> PushMany(IReadOnlyList<T> values, CancellationToken token)
 		{
-			var results = new List<R>();
+			var results = new List<Task<R>>(values.Count);
 			foreach (var value in values)
 			{
 				if (token.IsCancellationRequested)
 					break;
-				results.Add(await Push(value, token));
+				results.Add(Push(value, token));
 			}
-			return results.ToArray();
+			await Task.WhenAll(results);
+			return results.Select(r => r.Result).ToArray();
 		}
 
 		Task IActor<T>.Push(T value)

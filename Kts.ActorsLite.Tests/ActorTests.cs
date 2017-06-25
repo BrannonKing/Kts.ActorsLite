@@ -193,11 +193,14 @@ namespace Kts.ActorsLite.Tests
 					await last;
 
 				Assert.True(firsts[0]);
-				Assert.True(lasts[2]);
-				Assert.False(firsts[1]);
-				Assert.False(firsts[2]);
-				Assert.False(lasts[0]);
-				Assert.False(lasts[1]);
+				Assert.True(lasts[spot - 1]);
+				if (spot > 1)
+				{
+					Assert.False(firsts[1]);
+					Assert.False(firsts[2]);
+					Assert.False(lasts[0]);
+					Assert.False(lasts[1]);
+				}
 			}
 		}
 
