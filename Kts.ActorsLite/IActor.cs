@@ -27,8 +27,8 @@ namespace Kts.ActorsLite
 	public enum ActorType { MostRecentAsync, OrderedAsync, OrderedSync, PeriodicAsync, UnorderedAsync }
 	public interface IActorFactory
 	{
-		IActor<T> Create<T>(ActorType type, Action<T> action, int periodMs = -1);
-		IActor<T, R> Create<T, R>(ActorType type, Func<T, R> action, int periodMs = -1);
+		IActor<T> Create<T>(ActorType type, SetAction<T> action, int periodMs = -1);
+		IActor<T, R> Create<T, R>(ActorType type, SetFunc<T, R> action, int periodMs = -1);
 	}
 
 	public interface ITaskSchedulerFactory

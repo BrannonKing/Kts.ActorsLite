@@ -11,5 +11,7 @@
 		<PackageTags>actors schedulers tasks TPL</PackageTags>
 		<PackageLicenseUrl>https://github.com/BrannonKing/Kts.Actors/blob/master/LICENSE</PackageLicenseUrl>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Version>1.0.2</Version>
+		<PackageReleaseNotes>Added additional constructors for accepting actions that capture the first and last items in a group.</PackageReleaseNotes>
 	</PropertyGroup>
 </Project>

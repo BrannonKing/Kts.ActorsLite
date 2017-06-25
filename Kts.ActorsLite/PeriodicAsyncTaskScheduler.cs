@@ -36,7 +36,7 @@ namespace Kts.ActorsLite
 		{
 			if (!Monitor.TryEnter(_overrunLock))
 			{
-				System.Diagnostics.Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted time period.");
+				System.Diagnostics.Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted previous time period; skipping this run to allow them more time.");
 				if (_onOverrun != null)
 					_onOverrun.Invoke();
 			}

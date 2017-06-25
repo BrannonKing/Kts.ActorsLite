@@ -13,7 +13,7 @@ namespace Kts.ActorsLite
 			: base((t, c, f, l) => { action.Invoke(t); return true; }, periodMs)
 		{
 		}
-		
+
 		public PeriodicAsyncActor(Action<T, CancellationToken> action, int periodMs)
 			: base((t, c, f, l) => { action.Invoke(t, c); return true; }, periodMs)
 		{
@@ -31,6 +31,7 @@ namespace Kts.ActorsLite
 		protected Task _previous = Task.FromResult(true);
 		protected readonly ConcurrentQueue<TaskCompletionSource<R>> _queue = new ConcurrentQueue<TaskCompletionSource<R>>();
 		private readonly Timer _timer;
+		private readonly Action _onOverrun;
 
 		public PeriodicAsyncActor(Func<T, R> action, int periodMs)
 			: this((t, c, f, l) => action.Invoke(t), periodMs)
@@ -42,30 +43,48 @@ namespace Kts.ActorsLite
 		{
 		}
 
-		public PeriodicAsyncActor(SetFunc<T, R> action, int periodMs)
+		public PeriodicAsyncActor(SetFunc<T, R> action, int periodMs, Action onOverrun = null)
 		{
 			_action = action;
+			_onOverrun = onOverrun;
 			_timer = new Timer(Callback, null, 1, periodMs);
 		}
 
+		private readonly object _overrunLock = new object();
 		private void Callback(object state)
 		{
-			var isFirst = true;
-			while (_queue.TryDequeue(out var source))
+			if (!Monitor.TryEnter(_overrunLock))
 			{
-				var tuple = (Tuple<T, CancellationToken>)source.Task.AsyncState;
-				var value = tuple.Item1;
-				var token = tuple.Item2;
-				if (token != null && token.IsCancellationRequested)
+				System.Diagnostics.Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted previous time period; skipping this run to allow them more time.");
+				if (_onOverrun != null)
+					_onOverrun.Invoke();
+			}
+			else
+			{
+				try
 				{
-					source.SetCanceled();
+					var isFirst = true;
+					while (_queue.TryDequeue(out var source))
+					{
+						var tuple = (Tuple<T, CancellationToken>)source.Task.AsyncState;
+						var value = tuple.Item1;
+						var token = tuple.Item2;
+						if (token != null && token.IsCancellationRequested)
+						{
+							source.SetCanceled();
+						}
+						else
+						{
+							var empty = _queue.IsEmpty;
+							var result = _action.Invoke(value, token, isFirst, empty);
+							isFirst = empty;
+							source.SetResult(result);
+						}
+					}
 				}
-				else
+				finally
 				{
-					var empty = _queue.IsEmpty;
-					var result = _action.Invoke(value, token, isFirst, empty);
-					isFirst = empty;
-					source.SetResult(result);
+					Monitor.Exit(_overrunLock);
 				}
 			}
 		}

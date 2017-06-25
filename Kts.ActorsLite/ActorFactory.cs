@@ -5,7 +5,7 @@ namespace Kts.ActorsLite
 {
 	public class ActorFactory : IActorFactory, ITaskSchedulerFactory
 	{
-		public IActor<T> Create<T>(ActorType type, Action<T> action, int periodMs = -1)
+		public IActor<T> Create<T>(ActorType type, SetAction<T> action, int periodMs = -1)
 		{
 			switch (type)
 			{
@@ -24,7 +24,7 @@ namespace Kts.ActorsLite
 			}
 		}
 
-		public IActor<T, R> Create<T, R>(ActorType type, Func<T, R> action, int periodMs = -1)
+		public IActor<T, R> Create<T, R>(ActorType type, SetFunc<T, R> action, int periodMs = -1)
 		{
 			switch (type)
 			{
