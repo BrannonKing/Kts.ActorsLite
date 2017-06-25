@@ -13,6 +13,8 @@ This library uses the term "actor" because of Ruby; more specifically, Bernhardt
 
 **Unordered:** pass the method straight onto the thread pool. Execution order is not guaranteed.
 
+**Sync:** in the name of the class means execute it on the thread that calls it (immediately).
+
 # Example:
 ```csharp
 class ExampleClass
@@ -39,5 +41,8 @@ class ExampleClass
 	}
 }
 ```
-
 What I want is the ability to do some aspect-oriented programming with this library. I'd like to decorate a method with something like `[MostRecentWorker]` and have it insert my actor automatically. This can be done with PostSharp presently. I'll keep an eye on Roslyn's AOP abilities as well.
+
+# Schedulers:
+The library includes TaskScheduler implementaitions to match the actors. They are usefull for resolving situtions where `Task.Run` gives you out-of-order execution problems.
+
