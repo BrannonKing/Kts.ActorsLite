@@ -55,9 +55,8 @@ namespace Kts.ActorsLite
 		{
 			if (!Monitor.TryEnter(_overrunLock))
 			{
-				System.Diagnostics.Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted previous time period; skipping this run to allow them more time.");
-				if (_onOverrun != null)
-					_onOverrun.Invoke();
+				System.Diagnostics.Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted time period; skipping this run to allow them more time.");
+				_onOverrun?.Invoke();
 			}
 			else
 			{
@@ -69,7 +68,7 @@ namespace Kts.ActorsLite
 						var tuple = (Tuple<T, CancellationToken>)source.Task.AsyncState;
 						var value = tuple.Item1;
 						var token = tuple.Item2;
-						if (token != null && token.IsCancellationRequested)
+						if (token.IsCancellationRequested)
 						{
 							source.SetCanceled();
 						}
@@ -77,6 +76,8 @@ namespace Kts.ActorsLite
 						{
 							var empty = _queue.IsEmpty;
 							var result = _action.Invoke(value, token, isFirst, empty);
+							var tret = result as Task;
+							tret?.Wait(); // we can't move on until this one is done or we might get out of order
 							isFirst = empty;
 							source.SetResult(result);
 						}

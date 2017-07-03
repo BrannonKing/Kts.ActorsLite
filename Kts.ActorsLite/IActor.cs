@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
-	public delegate void SetAction<T>(T value, CancellationToken token, bool isFirstInSet = false, bool isLastInSet = false);
-	public delegate R SetFunc<T, R>(T value, CancellationToken token, bool isFirstInSet = false, bool isLastInSet = false);
+	public delegate void SetAction<in T>(T value, CancellationToken token, bool isFirstInSet = false, bool isLastInSet = false);
+	public delegate R SetFunc<in T, out R>(T value, CancellationToken token, bool isFirstInSet = false, bool isLastInSet = false);
 
-	public interface IActor<T>
+	public interface IActor<in T>
 	{
 		Task Push(T value);
 		Task PushMany(IReadOnlyList<T> values);
@@ -16,7 +15,7 @@ namespace Kts.ActorsLite
 		Task PushMany(IReadOnlyList<T> values, CancellationToken token);
 	}
 
-	public interface IActor<T, R>: IActor<T>
+	public interface IActor<in T, R>: IActor<T>
 	{
 		new Task<R> Push(T value);
 		new Task<R[]> PushMany(IReadOnlyList<T> values);

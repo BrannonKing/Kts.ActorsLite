@@ -62,12 +62,9 @@ namespace Kts.ActorsLite
 		{
 			if (!token.IsCancellationRequested)
 			{
-				var ret = default(R);
-				try
-				{
-					ret = _action.Invoke(value, token, true, true);
-				}
-				catch (OperationCanceledException) { }
+				var ret = _action.Invoke(value, token, true, true);
+				var tret = ret as Task;
+				tret?.Wait(); // we can't move on until this one is done or we might get out of order
 				if (token.IsCancellationRequested)
 					return Task.Run(() => ret, token);
 				return Task.FromResult(ret);

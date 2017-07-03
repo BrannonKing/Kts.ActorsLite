@@ -8,7 +8,7 @@ namespace Kts.ActorsLite
 	/// <summary>
 	/// Executes on the primary thread pool. If a current task is executing, any tasks queued to run after it will be replaced by the most recent request.
 	/// </summary>
-	public class MostRecentAsyncActor<T> : MostRecentAsyncActor<T, bool>, IActor<T>
+	public class MostRecentAsyncActor<T> : MostRecentAsyncActor<T, bool>
 	{
 		public MostRecentAsyncActor(Action<T> action)
 			: this((t, c) => action.Invoke(t))
@@ -69,7 +69,12 @@ namespace Kts.ActorsLite
 				{
 					var shouldRun = local == _counter;
 					if (shouldRun && !token.IsCancellationRequested)
-						return _action.Invoke(value, token, isFirst, true);
+					{
+						var ret = _action.Invoke(value, token, isFirst, true);
+						var tret = ret as Task;
+						tret?.Wait(); // we can't move on until this one is done or we might get out of order
+						return ret;
+					}
 					return default(R);
 				}, TaskContinuationOptions.PreferFairness); // don't pass the token in here so that all tasks succeed even if they don't do anything
 				_previous = task;

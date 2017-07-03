@@ -68,6 +68,8 @@ namespace Kts.ActorsLite
 				task = _previous.ContinueWith(prev =>
 				{
 					var ret = _action.Invoke(value, token, isFirst, isLast.Invoke());
+					var tret = ret as Task;
+					tret?.Wait(); // we can't move on until this one is done or we might get out of order
 					return ret;
 
 				}, TaskContinuationOptions.PreferFairness);
