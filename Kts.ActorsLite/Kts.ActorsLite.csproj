@@ -11,8 +11,8 @@
 		<PackageTags>actors schedulers tasks TPL</PackageTags>
 		<PackageLicenseUrl>https://github.com/BrannonKing/Kts.Actors/blob/master/LICENSE</PackageLicenseUrl>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<Version>1.0.3</Version>
-		<PackageReleaseNotes>Added additional constructors for accepting actions that capture the first and last items in a group. Changed actors to wait user-actions return Task.</PackageReleaseNotes>
-		<AssemblyVersion>1.0.2.0</AssemblyVersion>
+		<Version>1.0.4</Version>
+		<PackageReleaseNotes>Ditched the use of System.Threading.Timer because it is reentrant.</PackageReleaseNotes>
+		<AssemblyVersion>1.0.4.0</AssemblyVersion>
 	</PropertyGroup>
 </Project>

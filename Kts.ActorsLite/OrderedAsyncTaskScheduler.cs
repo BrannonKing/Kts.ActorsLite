@@ -7,7 +7,7 @@ namespace Kts.ActorsLite
 {
 	public class OrderedAsyncTaskScheduler: TaskScheduler
 	{
-		private readonly ConcurrentQueue<Task> _tasks = new ConcurrentQueue<Task>();
+		private readonly ConcurrentQueue<Task> _queue = new ConcurrentQueue<Task>();
 		private readonly MostRecentAsyncActor<object> _processor;
 		public OrderedAsyncTaskScheduler()
 		{
@@ -16,20 +16,22 @@ namespace Kts.ActorsLite
 
 		protected override IEnumerable<Task> GetScheduledTasks()
 		{
-			return _tasks;
+			return _queue;
 		}
+
+		public int ScheduledTasksCount => _queue.Count;
 
 		public override int MaximumConcurrencyLevel => 1;
 
 		private void Process()
 		{
-			while (_tasks.TryDequeue(out Task task))
+			while (_queue.TryDequeue(out Task task))
 				TryExecuteTask(task);
 		}
 
 		protected override void QueueTask(Task task)
 		{
-			_tasks.Enqueue(task);
+			_queue.Enqueue(task);
 			_processor.Push(null);
 		}
 

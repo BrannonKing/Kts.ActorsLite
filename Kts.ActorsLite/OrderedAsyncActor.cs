@@ -57,19 +57,22 @@ namespace Kts.ActorsLite
 			return PushMany(values, CancellationToken.None);
 		}
 
+		private int _queueCount;
+		public int ScheduledTasksCount => _queueCount;
+
 		public Task<R> Push(T value, CancellationToken token)
 		{
-			Task<R> task = null;
+			Task<R> task;
+			Interlocked.Increment(ref _queueCount);
 			lock (_lock)
 			{
 				var isFirst = _previous.IsCompleted;
-				Func<bool> isLast = () => { lock (_lock) return _previous == task; }; // hoping for by-ref closure on task here
-
 				task = _previous.ContinueWith(prev =>
 				{
-					var ret = _action.Invoke(value, token, isFirst, isLast.Invoke());
+					var ret = _action.Invoke(value, token, isFirst, _queueCount == 1);
 					var tret = ret as Task;
 					tret?.Wait(); // we can't move on until this one is done or we might get out of order
+					Interlocked.Decrement(ref _queueCount);
 					return ret;
 
 				}, TaskContinuationOptions.PreferFairness);

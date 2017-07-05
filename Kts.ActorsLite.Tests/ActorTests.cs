@@ -30,7 +30,7 @@ namespace Kts.ActorsLite.Tests
 			yield return new OrderedSyncActor<T, R>(func);
 			yield return new OrderedAsyncActor<T, R>(func);
 			yield return new UnorderedAsyncActor<T, R>(func);
-			yield return new PeriodicAsyncActor<T, R>(func, 20);
+			yield return new PeriodicAsyncActor<T, R>(func, TimeSpan.FromMilliseconds(20));
 			yield return new MostRecentAsyncActor<T, R>(func);
 		}
 
@@ -160,7 +160,7 @@ namespace Kts.ActorsLite.Tests
 			yield return new OrderedSyncActor<T>(func);
 			yield return new OrderedAsyncActor<T>(func);
 			//yield return new UnorderedAsyncActor<T>(func);
-			yield return new PeriodicAsyncActor<T>(func, 5);
+			yield return new PeriodicAsyncActor<T>(func, TimeSpan.FromMilliseconds(20));
 			yield return new MostRecentAsyncActor<T>(func);
 		}
 

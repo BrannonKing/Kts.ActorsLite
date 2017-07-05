@@ -90,7 +90,7 @@ namespace Kts.ActorsLite.Tests
 		public async Task TestPeriodicAsyncTaskScheduler()
 		{
 			int x = 0;
-			var scheduler = new PeriodicAsyncTaskScheduler(5);
+			var scheduler = new PeriodicAsyncTaskScheduler(TimeSpan.FromMilliseconds(5));
 			for (int i = 0; i < 10; i++)
 				new Task(() => x++).Start(scheduler);
 

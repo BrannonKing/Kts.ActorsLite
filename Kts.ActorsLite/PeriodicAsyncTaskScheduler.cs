@@ -1,62 +1,63 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
-	public class PeriodicAsyncTaskScheduler: TaskScheduler, IDisposable
+	public class PeriodicAsyncTaskScheduler : TaskScheduler, IDisposable
 	{
-		private readonly ConcurrentQueue<Task> _tasks = new ConcurrentQueue<Task>();
-		private readonly Timer _timer;
-		private readonly Action _onOverrun;
+		private readonly ConcurrentQueue<Task> _queue = new ConcurrentQueue<Task>();
+		private readonly CancellationTokenSource _exitSource = new CancellationTokenSource();
+		private readonly Task _periodicTask; // just here to keep it in scope
 
-		public PeriodicAsyncTaskScheduler(int periodMs, Action onOverrun = null)
+		public PeriodicAsyncTaskScheduler(TimeSpan period, Action<TimeSpan> onOverrun = null)
 		{
 			// the threading timer uses the thread pool
 			// its callback method is re-entrant in the case of an overrun
 			// we can't have that here; we always want them to execute in order
-			// we need to warn the user obout overruns somehow
-			// biggest issue: Tasks are one-shots
+			// we also need to warn the user obout overruns somehow
 
-			_onOverrun = onOverrun;
-			_timer = new Timer(Callback, null, 1, periodMs);
+			_periodicTask = new Task(() => // using Task because Thread is not available in the present .NET Standard
+			{
+				var sw = new Stopwatch();
+				while (!_exitSource.IsCancellationRequested)
+				{
+					// TODO: name this thread once we're using .NETStandard 2.0 (by checking to see if it is a threadpool thread or not)
+					sw.Restart();
+					while (_queue.TryDequeue(out Task task))
+					{
+						TryExecuteTask(task);
+					}
+					sw.Stop();
+					if (sw.Elapsed > period)
+					{
+						Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted time period of {0}. Took {1}", period, sw.Elapsed);
+						onOverrun?.Invoke(sw.Elapsed);
+						continue;
+					}
+					try
+					{
+						Task.Delay(period - sw.Elapsed).Wait(_exitSource.Token);
+					}
+					catch (TaskCanceledException) { }
+				}
+			}, TaskCreationOptions.LongRunning);
+			_periodicTask.Start();
 		}
 
 		protected override IEnumerable<Task> GetScheduledTasks()
 		{
-			return _tasks;
+			return _queue;
 		}
 
 		public override int MaximumConcurrencyLevel => 1;
 
-		private readonly object _overrunLock = new object();
-		private void Callback(object state)
-		{
-			if (!Monitor.TryEnter(_overrunLock))
-			{
-				System.Diagnostics.Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted previous time period; skipping this run to allow them more time.");
-				if (_onOverrun != null)
-					_onOverrun.Invoke();
-			}
-			else
-			{
-				try
-				{
-					while (_tasks.TryDequeue(out Task task))
-						TryExecuteTask(task);
-				}
-				finally
-				{
-					Monitor.Exit(_overrunLock);
-				}
-			}
-		}
-
 		protected override void QueueTask(Task task)
 		{
-			_tasks.Enqueue(task);
+			_queue.Enqueue(task);
 		}
 
 		protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
@@ -66,12 +67,19 @@ namespace Kts.ActorsLite
 
 		protected override bool TryDequeue(Task task)
 		{
+			// need this to be atomic:
+			//if (_queue.TryPeek(out var head) && head == task)
+			//{
+			//	return _queue.TryDequeue(out head);
+			//}
 			return false;
 		}
 
 		public void Dispose()
 		{
-			_timer.Dispose();
+			_exitSource.Cancel();
 		}
+
+		public int ScheduledTasksCount => _queue.Count;
 	}
 }

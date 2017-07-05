@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,59 +10,47 @@ namespace Kts.ActorsLite
 	public class PeriodicAsyncActor<T> : PeriodicAsyncActor<T, bool> // this hierarchy feels a little backward
 	{
 
-		public PeriodicAsyncActor(Action<T> action, int periodMs)
-			: base((t, c, f, l) => { action.Invoke(t); return true; }, periodMs)
+		public PeriodicAsyncActor(Action<T> action, TimeSpan period)
+			: base((t, c, f, l) => { action.Invoke(t); return true; }, period)
 		{
 		}
 
-		public PeriodicAsyncActor(Action<T, CancellationToken> action, int periodMs)
-			: base((t, c, f, l) => { action.Invoke(t, c); return true; }, periodMs)
+		public PeriodicAsyncActor(Action<T, CancellationToken> action, TimeSpan period)
+			: base((t, c, f, l) => { action.Invoke(t, c); return true; }, period)
 		{
 		}
 
-		public PeriodicAsyncActor(SetAction<T> action, int periodMs)
-			: base((t, c, f, l) => { action.Invoke(t, c, f, l); return true; }, periodMs)
+		public PeriodicAsyncActor(SetAction<T> action, TimeSpan period)
+			: base((t, c, f, l) => { action.Invoke(t, c, f, l); return true; }, period)
 		{
 		}
 	}
 
 	public class PeriodicAsyncActor<T, R> : IActor<T, R>, IDisposable
 	{
-		private readonly SetFunc<T, R> _action;
-		protected Task _previous = Task.FromResult(true);
 		protected readonly ConcurrentQueue<TaskCompletionSource<R>> _queue = new ConcurrentQueue<TaskCompletionSource<R>>();
-		private readonly Timer _timer;
-		private readonly Action _onOverrun;
+		private readonly CancellationTokenSource _exitSource = new CancellationTokenSource();
+		private readonly Task _periodicTask; // just here to keep it in scope
 
-		public PeriodicAsyncActor(Func<T, R> action, int periodMs)
-			: this((t, c, f, l) => action.Invoke(t), periodMs)
+		public PeriodicAsyncActor(Func<T, R> action, TimeSpan period)
+			: this((t, c, f, l) => action.Invoke(t), period)
 		{
 		}
 
-		public PeriodicAsyncActor(Func<T, CancellationToken, R> action, int periodMs)
-			: this((t, c, f, l) => action.Invoke(t, c), periodMs)
+		public PeriodicAsyncActor(Func<T, CancellationToken, R> action, TimeSpan period)
+			: this((t, c, f, l) => action.Invoke(t, c), period)
 		{
 		}
 
-		public PeriodicAsyncActor(SetFunc<T, R> action, int periodMs, Action onOverrun = null)
+		public PeriodicAsyncActor(SetFunc<T, R> action, TimeSpan period, Action<TimeSpan> onOverrun = null)
 		{
-			_action = action;
-			_onOverrun = onOverrun;
-			_timer = new Timer(Callback, null, 1, periodMs);
-		}
-
-		private readonly object _overrunLock = new object();
-		private void Callback(object state)
-		{
-			if (!Monitor.TryEnter(_overrunLock))
+			_periodicTask = new Task(() => // using Task because Thread is not available in the present .NET Standard
 			{
-				System.Diagnostics.Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted time period; skipping this run to allow them more time.");
-				_onOverrun?.Invoke();
-			}
-			else
-			{
-				try
+				var sw = new Stopwatch();
+				while (!_exitSource.IsCancellationRequested)
 				{
+					// TODO: name this thread once we're using .NETStandard 2.0 (by checking to see if it is a threadpool thread or not)
+					sw.Restart();
 					var isFirst = true;
 					while (_queue.TryDequeue(out var source))
 					{
@@ -75,25 +64,36 @@ namespace Kts.ActorsLite
 						else
 						{
 							var empty = _queue.IsEmpty;
-							var result = _action.Invoke(value, token, isFirst, empty);
+							var result = action.Invoke(value, token, isFirst, empty);
 							var tret = result as Task;
 							tret?.Wait(); // we can't move on until this one is done or we might get out of order
 							isFirst = empty;
 							source.SetResult(result);
 						}
 					}
+					sw.Stop();
+					if (sw.Elapsed > period)
+					{
+						Debug.WriteLine("PeriodicAsyncTaskScheduler: unable to complete all tasks in the alloted time period of {0}. Took {1}", period, sw.Elapsed);
+						onOverrun?.Invoke(sw.Elapsed);
+						continue;
+					}
+					try
+					{
+						Task.Delay(period - sw.Elapsed).Wait(_exitSource.Token);
+					}
+					catch (TaskCanceledException) { }
 				}
-				finally
-				{
-					Monitor.Exit(_overrunLock);
-				}
-			}
+			}, TaskCreationOptions.LongRunning);
+			_periodicTask.Start();
 		}
 
 		public void Dispose()
 		{
-			_timer.Dispose();
+			_exitSource.Cancel();
 		}
+
+		public int ScheduledTasksCount => _queue.Count;
 
 		public Task<R> Push(T value)
 		{

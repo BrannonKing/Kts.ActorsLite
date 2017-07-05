@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,12 +27,12 @@ namespace Kts.ActorsLite
 	public enum ActorType { MostRecentAsync, OrderedAsync, OrderedSync, PeriodicAsync, UnorderedAsync }
 	public interface IActorFactory
 	{
-		IActor<T> Create<T>(ActorType type, SetAction<T> action, int periodMs = -1);
-		IActor<T, R> Create<T, R>(ActorType type, SetFunc<T, R> action, int periodMs = -1);
+		IActor<T> Create<T>(ActorType type, SetAction<T> action, TimeSpan? period = null);
+		IActor<T, R> Create<T, R>(ActorType type, SetFunc<T, R> action, TimeSpan? period = null);
 	}
 
 	public interface ITaskSchedulerFactory
 	{
-		TaskScheduler Create(ActorType type, int periodMs = -1);
+		TaskScheduler Create(ActorType type, TimeSpan? period = null);
 	}
 }

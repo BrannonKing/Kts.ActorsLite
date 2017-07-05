@@ -5,7 +5,7 @@ namespace Kts.ActorsLite
 {
 	public class ActorFactory : IActorFactory, ITaskSchedulerFactory
 	{
-		public IActor<T> Create<T>(ActorType type, SetAction<T> action, int periodMs = -1)
+		public IActor<T> Create<T>(ActorType type, SetAction<T> action, TimeSpan? period = null)
 		{
 			switch (type)
 			{
@@ -16,7 +16,7 @@ namespace Kts.ActorsLite
 				case ActorType.OrderedSync:
 					return new OrderedSyncActor<T>(action);
 				case ActorType.PeriodicAsync:
-					return new PeriodicAsyncActor<T>(action, periodMs);
+					return new PeriodicAsyncActor<T>(action, period.GetValueOrDefault(TimeSpan.FromSeconds(0.1)));
 				case ActorType.UnorderedAsync:
 					return new UnorderedAsyncActor<T>(action);
 				default:
@@ -24,7 +24,7 @@ namespace Kts.ActorsLite
 			}
 		}
 
-		public IActor<T, R> Create<T, R>(ActorType type, SetFunc<T, R> action, int periodMs = -1)
+		public IActor<T, R> Create<T, R>(ActorType type, SetFunc<T, R> action, TimeSpan? period = null)
 		{
 			switch (type)
 			{
@@ -35,7 +35,7 @@ namespace Kts.ActorsLite
 				case ActorType.OrderedSync:
 					return new OrderedSyncActor<T, R>(action);
 				case ActorType.PeriodicAsync:
-					return new PeriodicAsyncActor<T, R>(action, periodMs);
+					return new PeriodicAsyncActor<T, R>(action, period.GetValueOrDefault(TimeSpan.FromSeconds(0.1)));
 				case ActorType.UnorderedAsync:
 					return new UnorderedAsyncActor<T, R>(action);
 				default:
@@ -43,7 +43,7 @@ namespace Kts.ActorsLite
 			}
 		}
 
-		public TaskScheduler Create(ActorType type, int periodMs = -1)
+		public TaskScheduler Create(ActorType type, TimeSpan? period = null)
 		{
 			switch (type)
 			{
@@ -54,7 +54,7 @@ namespace Kts.ActorsLite
 				case ActorType.OrderedSync:
 					return new OrderedSyncTaskScheduler();
 				case ActorType.PeriodicAsync:
-					return new PeriodicAsyncTaskScheduler(periodMs);
+					return new PeriodicAsyncTaskScheduler(period.GetValueOrDefault(TimeSpan.FromSeconds(0.1)));
 				case ActorType.UnorderedAsync:
 					return TaskScheduler.Default;
 				default:
