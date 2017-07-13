@@ -66,7 +66,7 @@ namespace Kts.ActorsLite
 							var empty = _queue.IsEmpty;
 							var result = action.Invoke(value, token, isFirst, empty);
 							var tret = result as Task;
-							tret?.Wait(); // we can't move on until this one is done or we might get out of order
+							tret?.ConfigureAwait(false).GetAwaiter().GetResult(); // we can't move on until this one is done or we might get out of order
 							isFirst = empty;
 							source.SetResult(result);
 						}

@@ -52,7 +52,7 @@ namespace Kts.ActorsLite
 
 		public async Task<R[]> PushMany(IReadOnlyList<T> values)
 		{
-			return await Task.WhenAll(values.Select(v => Push(v)));
+			return await Task.WhenAll(values.Select(Push));
 		}
 
 		public async Task<R> Push(T value, CancellationToken token)

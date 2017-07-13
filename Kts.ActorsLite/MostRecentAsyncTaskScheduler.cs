@@ -29,7 +29,7 @@ namespace Kts.ActorsLite
 					if (shouldRun && !localTask.IsCanceled)
 					{
 						TryExecuteTask(localTask);
-						localTask.Wait();
+						localTask.ConfigureAwait(false).GetAwaiter().GetResult();
 					}
 				});
 				_previous = task;

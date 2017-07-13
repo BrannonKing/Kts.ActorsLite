@@ -64,13 +64,10 @@ namespace Kts.ActorsLite
 			{
 				var ret = _action.Invoke(value, token, true, true);
 				var tret = ret as Task;
-				tret?.Wait(); // we can't move on until this one is done or we might get out of order
-				if (token.IsCancellationRequested)
-					return Task.Run(() => ret, token);
-				return Task.FromResult(ret);
+				tret?.ConfigureAwait(false).GetAwaiter().GetResult(); // we can't move on until this one is done or we might get out of order
+				return Task.FromResult(ret); // looks like you'll have to call Unwrap on the outside because C# won't let me "is Task<R>" here
 			}
-			else
-				return Task.Run(() => default(R), token);
+			return Task.FromCanceled<R>(token);
 		}
 
 		public Task<R[]> PushMany(IReadOnlyList<T> values, CancellationToken token)
@@ -84,14 +81,13 @@ namespace Kts.ActorsLite
 					{
 						rs.Add(_action.Invoke(values[i], token, i == 0, i == values.Count - 1));
 					}
-					catch (OperationCanceledException) { }
+					catch (TaskCanceledException) { }
 					if (token.IsCancellationRequested)
 						return Task.Run(() => rs.ToArray(), token);
 				}
 				return Task.FromResult(rs.ToArray());
 			}
-			else
-				return Task.Run(() => new R[0], token);
+			return Task.FromCanceled<R[]>(token);
 		}
 
 		Task IActor<T>.Push(T value)

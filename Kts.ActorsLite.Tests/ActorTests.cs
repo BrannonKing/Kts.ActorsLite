@@ -25,7 +25,7 @@ namespace Kts.ActorsLite.Tests
 		// 4. make sure the four that should keep them in order do
 		// 5. make sure each actor can handle multiple threads pushing to it
 
-		private IEnumerable<IActor<T, R>> CreateActors<T, R>(Func<T, CancellationToken, R> func)
+		private IEnumerable<IActor<T, R>> CreateActors<T, R>(SetFunc<T, R> func)
 		{
 			yield return new OrderedSyncActor<T, R>(func);
 			yield return new OrderedAsyncActor<T, R>(func);
@@ -34,12 +34,52 @@ namespace Kts.ActorsLite.Tests
 			yield return new MostRecentAsyncActor<T, R>(func);
 		}
 
+		public class Holder
+		{
+			public int X;
+		}
+
+		[Fact]
+		public async Task VerifyNoDeadlock()
+		{
+			async Task setFunc(Holder h, CancellationToken token, bool isFirst, bool isLast)
+			{
+				h.X += 20;
+				await Task.Run(() =>
+				{
+					Task.Delay(3).Wait();
+					h.X += 20;
+				});
+				h.X += 20;
+				await Task.Delay(2);
+				h.X += 20;
+			}
+
+			foreach (var actor in CreateActors<Holder, Task>(setFunc))
+			{
+				var tasks = new List<Task>();
+				for (int i = 0; i < 20; i++)
+					tasks.Add(actor.Push(new Holder {X = i}));
+
+				await Task.WhenAll(tasks);
+			}
+		}
+
+		//[Fact]
+		//public async Task CanceledThrow()
+		//{
+		//	var actor = new OrderedSyncActor<bool>(b => {});
+		//	var cts = new CancellationTokenSource();
+		//	cts.Cancel();
+		//	await actor.Push(true, cts.Token);
+		//}
+
 		[Fact]
 		public async Task AllGetDone()
 		{
 			var rand = new Random(42);
-			const int multiplier = 20, cnt = 1000;
-			foreach (var actor in CreateActors<int, int>((x, t) => x * multiplier))
+			const int multiplier = 20, cnt = 10000;
+			foreach (var actor in CreateActors<int, int>((x, t, f, l) => x * multiplier))
 			{
 				var tasks = new List<Task<int>>(cnt);
 				for (int i = 0; i < cnt; i++)
@@ -67,12 +107,9 @@ namespace Kts.ActorsLite.Tests
 						// they should all be in order
 						Assert.Equal(ordered, nums);
 					}
-					else
+					for (int i = 0; i < cnt; i++)
 					{
-						for (int i = 0; i < cnt; i++)
-						{
-							Assert.Equal((i + 1) * multiplier, ordered[i]);
-						}
+						Assert.Equal((i + 1) * multiplier, ordered[i]);
 					}
 				}
 

@@ -72,7 +72,7 @@ namespace Kts.ActorsLite
 					{
 						var ret = _action.Invoke(value, token, isFirst, true);
 						var tret = ret as Task;
-						tret?.Wait(); // we can't move on until this one is done or we might get out of order
+						tret?.ConfigureAwait(false).GetAwaiter().GetResult(); // we can't move on until this one is done or we might get out of order
 						return ret;
 					}
 					return default(R);
