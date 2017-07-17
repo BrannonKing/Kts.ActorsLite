@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
+	/// <summary>
+	/// Executes the method immediately (on the caller thread) upon any call to Task.Start.
+	/// </summary>
 	public class OrderedSyncTaskScheduler: TaskScheduler
 	{
 		protected override IEnumerable<Task> GetScheduledTasks()

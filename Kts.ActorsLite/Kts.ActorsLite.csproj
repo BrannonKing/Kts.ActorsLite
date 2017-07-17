@@ -11,9 +11,9 @@
 		<PackageTags>actors schedulers tasks TPL</PackageTags>
 		<PackageLicenseUrl>https://github.com/BrannonKing/Kts.Actors/blob/master/LICENSE</PackageLicenseUrl>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<Version>1.0.5</Version>
+		<Version>1.0.6</Version>
 		<PackageReleaseNotes>Ditched the use of System.Threading.Timer because it is reentrant.</PackageReleaseNotes>
 		<AssemblyVersion>1.0.4.0</AssemblyVersion>
-		<FileVersion>1.0.5.0</FileVersion>
+		<FileVersion>1.0.6.0</FileVersion>
 	</PropertyGroup>
 </Project>

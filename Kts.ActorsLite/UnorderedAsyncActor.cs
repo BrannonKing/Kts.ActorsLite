@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Kts.ActorsLite
 {
 	/// <summary>
-	/// Executes on the primary thread pool as soon as possible.
+	/// Executes on the primary thread pool as soon as possible. Data is processed concurrently.
 	/// </summary>
 	public class UnorderedAsyncActor<T> : UnorderedAsyncActor<T, bool>
 	{

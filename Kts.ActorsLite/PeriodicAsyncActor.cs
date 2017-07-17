@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
+	/// <summary>
+	/// Runs the primary action on all of the queued data when the timer elapses.
+	/// </summary>
 	public class PeriodicAsyncActor<T> : PeriodicAsyncActor<T, bool> // this hierarchy feels a little backward
 	{
-
 		public PeriodicAsyncActor(Action<T> action, TimeSpan period)
 			: base((t, c, f, l) => { action.Invoke(t); return true; }, period)
 		{
@@ -80,9 +82,10 @@ namespace Kts.ActorsLite
 					}
 					try
 					{
-						Task.Delay(period - sw.Elapsed).Wait(_exitSource.Token);
+						using (var slim = new ManualResetEventSlim(false))
+							slim.Wait(period - sw.Elapsed, _exitSource.Token);
 					}
-					catch (TaskCanceledException) { }
+					catch (OperationCanceledException) { }
 				}
 			}, TaskCreationOptions.LongRunning);
 			_periodicTask.Start();

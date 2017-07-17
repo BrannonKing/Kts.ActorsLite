@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
+	/// <summary>
+	/// Runs all the queued tasks when the timer elapses (which happens repeatedly).
+	/// </summary>
 	public class PeriodicAsyncTaskScheduler : TaskScheduler, IDisposable
 	{
 		private readonly ConcurrentQueue<Task> _queue = new ConcurrentQueue<Task>();
@@ -15,6 +18,9 @@ namespace Kts.ActorsLite
 
 		public PeriodicAsyncTaskScheduler(TimeSpan period, Action<TimeSpan> onOverrun = null)
 		{
+			if (period < TimeSpan.FromMilliseconds(0.5)) // it actually seems to be 1ms on most Win10 systems
+				throw new ArgumentException("The period is too small to be achievable. Use a SpinWait instead.");
+
 			// the threading timer uses the thread pool
 			// its callback method is re-entrant in the case of an overrun
 			// we can't have that here; we always want them to execute in order
@@ -40,9 +46,10 @@ namespace Kts.ActorsLite
 					}
 					try
 					{
-						Task.Delay(period - sw.Elapsed).Wait(_exitSource.Token);
+						using (var slim = new ManualResetEventSlim(false))
+							slim.Wait(period - sw.Elapsed, _exitSource.Token);
 					}
-					catch (TaskCanceledException) { }
+					catch (OperationCanceledException) { }
 				}
 			}, TaskCreationOptions.LongRunning);
 			_periodicTask.Start();

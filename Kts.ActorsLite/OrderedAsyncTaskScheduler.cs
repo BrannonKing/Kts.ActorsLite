@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
+	/// <summary>
+	/// This runs all the queued tasks on the threadpool. It will run them in order. It does not run anything concurrently or re-entrantly.
+	/// </summary>
 	public class OrderedAsyncTaskScheduler: TaskScheduler
 	{
 		private readonly ConcurrentQueue<Task> _queue = new ConcurrentQueue<Task>();

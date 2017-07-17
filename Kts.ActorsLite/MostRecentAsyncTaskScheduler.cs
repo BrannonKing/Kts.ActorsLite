@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace Kts.ActorsLite
 {
+	/// <summary>
+	/// Runs the currently executing task (if any) and the last one queued, skipping all in between.
+	/// </summary>
 	public class MostRecentAsyncTaskScheduler: TaskScheduler
 	{
 		protected override IEnumerable<Task> GetScheduledTasks()

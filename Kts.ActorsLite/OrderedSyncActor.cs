@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Kts.ActorsLite
 {
 	/// <summary>
-	/// Executes the method immediately (on the caller thread) upon any call.
+	/// Executes the method immediately (on the caller thread) upon any push call.
 	/// </summary>
 	public class OrderedSyncActor<T> : OrderedSyncActor<T, bool>
 	{
@@ -81,7 +81,7 @@ namespace Kts.ActorsLite
 					{
 						rs.Add(_action.Invoke(values[i], token, i == 0, i == values.Count - 1));
 					}
-					catch (TaskCanceledException) { }
+					catch (OperationCanceledException) { }
 					if (token.IsCancellationRequested)
 						return Task.Run(() => rs.ToArray(), token);
 				}
