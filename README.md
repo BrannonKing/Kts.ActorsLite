@@ -35,7 +35,7 @@ class ExampleClass
 
 	private readonly MostRecentAsyncActor<CriticalParams> _criticalMethod;
 
-	public async void PrintAndSkipSomeIfTheyComeToFast(int key, string value)
+	public async void PrintAndSkipSomeIfTheyComeTooFast(int key, string value)
 	{
 		await _criticalMethod.Push(new CriticalParams { Key = key, Value = value });
 	}
