@@ -1,4 +1,4 @@
-# Kts.Actors
+# Kts.ActorsLite
 This is a small library that supports various types of asynchronous methods in .NET. It exists in part because I was dissatisfied with the functionality available in the ActionBlock class that comes with the TPL Dataflow library.
 
 This library uses the term "actor" because of Ruby; more specifically, Bernhardt's video [Boundaries](https://www.youtube.com/watch?v=yTkzNHF6rMs). It's more like "workers", though. They are queues of functions/methods to be executed.
